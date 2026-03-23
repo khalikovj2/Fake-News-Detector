@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verifai — News Credibility Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-mark">V</div>
+        <div class="logo-text">
+          <span class="logo-name">Verifai</span>
+          <span class="logo-sep">—</span>
+          <span class="logo-tag">News Credibility Checker</span>
+        </div>
+      </div>
+      <div class="header-status" id="headerStatus">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-label" id="statusLabel">Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- LEFT: INPUT -->
+    <aside class="sidebar">
+
+      <div class="sidebar-block">
+        <label class="field-label" for="textInput">Paste your text</label>
+        <textarea
+          id="textInput"
+          class="textarea"
+          placeholder="Paste a news headline or article here to check its credibility…"
+          spellcheck="false"
+        ></textarea>
+        <div class="textarea-footer">
+          <span class="word-count" id="wordCount">0 words</span>
+          <button class="link-btn" onclick="clearAll()">Clear</button>
+        </div>
+      </div>
+
+      <div class="sidebar-block">
+        <p class="field-label">Quick examples</p>
+        <div class="examples">
+          <button class="example-chip credible" onclick="loadEx('real')">
+            <span class="chip-dot green"></span>Real news
+          </button>
+          <button class="example-chip fake" onclick="loadEx('fake')">
+            <span class="chip-dot red"></span>Fake news
+          </button>
+          <button class="example-chip mixed" onclick="loadEx('mixed')">
+            <span class="chip-dot amber"></span>Uncertain
+          </button>
+        </div>
+      </div>
+
+      <button class="analyse-btn" id="analyseBtn" onclick="analyse()">
+        <span id="btnText">Analyse credibility</span>
+        <span id="btnSpinner" class="btn-spinner hidden">Analysing…</span>
+        <span class="btn-arrow">→</span>
+      </button>
+
+      <div class="how-it-works">
+        <p class="hint-title">How it works</p>
+        <p class="hint-body">Combines a Logistic Regression classifier trained on TF-IDF features with 30+ linguistic pattern rules to produce a credibility score from 0 to 100.</p>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT: RESULTS -->
+    <section class="results-panel">
+
+      <!-- Empty state -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-illustration">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="12" width="48" height="6" rx="3" fill="#D4C5A9" opacity="0.6"/>
+            <rect x="8" y="24" width="36" height="4" rx="2" fill="#D4C5A9" opacity="0.4"/>
+            <rect x="8" y="34" width="42" height="4" rx="2" fill="#D4C5A9" opacity="0.4"/>
+            <rect x="8" y="44" width="28" height="4" rx="2" fill="#D4C5A9" opacity="0.3"/>
+            <circle cx="52" cy="48" r="10" fill="none" stroke="#A89070" stroke-width="2" opacity="0.5"/>
+            <line x1="59" y1="55" x2="64" y2="60" stroke="#A89070" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+          </svg>
+        </div>
+        <p class="empty-title">No analysis yet</p>
+        <p class="empty-sub">Paste a headline or article on the left and click Analyse credibility</p>
+      </div>
+
+      <!-- Results content -->
+      <div id="results" class="hidden">
+
+        <!-- Verdict banner -->
+        <div class="verdict-banner" id="verdictBanner">
+          <div class="verdict-left">
+            <div class="verdict-icon" id="verdictIcon"></div>
+            <div>
+              <div class="verdict-title" id="verdictTitle">—</div>
+              <div class="verdict-sub" id="verdictSub">—</div>
+            </div>
+          </div>
+          <div class="verdict-score" id="verdictScore">—</div>
+        </div>
+
+        <!-- Score bar -->
+        <div class="score-section">
+          <div class="score-bar-labels">
+            <span>Fake / Clickbait</span>
+            <span>Uncertain</span>
+            <span>Credible</span>
+          </div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" id="scoreBarFill"></div>
+            <div class="score-bar-marker" id="scoreMarker"></div>
+          </div>
+        </div>
+
+        <!-- Stat row -->
+        <div class="stat-row">
+          <div class="stat-item">
+            <div class="stat-num red" id="statCB">0</div>
+            <div class="stat-label">Clickbait patterns</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-num green" id="statCM">0</div>
+            <div class="stat-label">Credible markers</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-num amber" id="statSW">0</div>
+            <div class="stat-label">Sensational words</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-num charcoal" id="statWC">0</div>
+            <div class="stat-label">Word count</div>
+          </div>
+        </div>
+
+        <!-- Score breakdown chart -->
+        <div class="card">
+          <p class="card-title">Score breakdown</p>
+          <div class="chart-wrap"><canvas id="scoreChart"></canvas></div>
+        </div>
+
+        <!-- Flagged words -->
+        <div class="card" id="flaggedCard">
+          <p class="card-title">Flagged sensational words</p>
+          <div id="flaggedWords" class="word-chips"></div>
+        </div>
+
+        <!-- Annotated text -->
+        <div class="card">
+          <p class="card-title">Annotated text <span class="card-sub">— highlighted patterns flagged by the detector</span></p>
+          <div id="annotatedText" class="annotated-text"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
